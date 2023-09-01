@@ -18,8 +18,11 @@ const SavedBooks = () => {
 
   // use this to determine if `useQuery()` hook needs to run again
   // const userDataLength = Object.keys(userData).length;
-
-  const { loading, error, data } = useQuery(GET_ME);
+  
+  const { loading, data } = useQuery(GET_ME);
+  const userData = data?.me || data?.user || {};
+  
+  const [removeBook, { error } ] = useMutation(REMOVE_BOOK);
   
   // if data isn't here yet, say so
   if (loading) {
@@ -28,7 +31,6 @@ const SavedBooks = () => {
   if (error) {
     return <h2>`Error: ${error.message}`</h2>
   }
-  const userData = data.me;
 
   // useEffect(() => {
   //   const getUserData = async () => {
@@ -57,19 +59,21 @@ const SavedBooks = () => {
 
   // create function that accepts the book's mongo _id value as param and deletes the book from the database
   
-  const HandleDeleteBook = async (bookId) => {
+  const handleDeleteBook = async (bookId) => {
     const token = Auth.loggedIn() ? Auth.getToken() : null;
-    const [removeBook] = useMutation(REMOVE_BOOK);
+    
     if (!token) {
       return false;
     }
 
     try {
-      const response = await removeBook(bookId);
+      const { data } = await removeBook({
+        variables: {bookId: bookId}
+      });
 
-      if (!response.ok) {
-        throw new Error('something went wrong!');
-      }
+      // if (!response.ok) {
+      //   throw new Error('something went wrong!');
+      // }
 
       // const updatedUser = await response.json();
       // setUserData(updatedUser);
@@ -84,7 +88,7 @@ const SavedBooks = () => {
 
   return (
     <>
-      <div fluid className="text-light bg-dark p-5">
+      <div className="text-light bg-dark p-5">
         <Container>
           <h1>Viewing saved books!</h1>
         </Container>
@@ -105,7 +109,7 @@ const SavedBooks = () => {
                     <Card.Title>{book.title}</Card.Title>
                     <p className='small'>Authors: {book.authors}</p>
                     <Card.Text>{book.description}</Card.Text>
-                    <Button className='btn-block btn-danger' onClick={() => HandleDeleteBook(book.bookId)}>
+                    <Button className='btn-block btn-danger' onClick={() => handleDeleteBook(book.bookId)}>
                       Delete this Book!
                     </Button>
                   </Card.Body>
